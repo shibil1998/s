@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<body>
+    <h2>Telegram Connection Tester</h2>
+    <button onclick="testConnection()">Send Test Message</button>
+    <p id="result">Click the button to test...</p>
+
+    <script>
+        async function testConnection() {
+            // REPLACE THESE WITH YOUR COPIED KEYS
+            const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA';
+            const CHAT_ID = '2018747103';
+            
+            const message = "✅ Connection Successful! Your script is ready.";
+            const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage?chat_id=${CHAT_ID}&text=${encodeURIComponent(message)}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.ok) {
+                    document.getElementById('result').innerText = "SUCCESS! Check your Telegram.";
+                    document.getElementById('result').style.color = "green";
+                } else {
+                    document.getElementById('result').innerText = "ERROR: " + data.description;
+                    document.getElementById('result').style.color = "red";
+                }
+            } catch (error) {
+                document.getElementById('result').innerText = "Network Error. Check your internet.";
+            }
+        }
+    </script>
+</body>
+</html>
